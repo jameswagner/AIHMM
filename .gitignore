@@ -30,3 +30,5 @@
 # Program specific output files
 *.evals
 *.viterbi
+
+*~

@@ -73,6 +73,3 @@ Note that no distinction is made in this type file of between SNPs that have exp
 Note that these e-values represent the LOG of (cDNA allelic expression / gDNA allelic expression), so as with the input files a value of
 0 represents no allelic expression, and highly positive or negative values indicate that one or the other allele is expressed more than the other. 
 
-#outputFiles
-
-- precomputed output files are available in the allelic/Debug/outputFiles directory.
