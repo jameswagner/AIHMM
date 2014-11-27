@@ -1,0 +1,59 @@
+################################################################################
+# Automatically-generated file. Do not edit!
+################################################################################
+
+# Add inputs and outputs from these tool invocations to the build variables 
+C_SRCS += \
+../src/constants.c 
+
+CPP_SRCS += \
+../src/Chromosome.cpp \
+../src/ExpressionInfo.cpp \
+../src/FileReader.cpp \
+../src/HMMSNP.cpp \
+../src/Individual.cpp \
+../src/SNP.cpp \
+../src/allelicImbalance.cpp \
+
+OBJS += \
+./src/Chromosome.o \
+./src/ExpressionInfo.o \
+./src/FileReader.o \
+./src/HMMSNP.o \
+./src/Individual.o \
+./src/SNP.o \
+./src/allelicImbalance.o \
+./src/constants.o \
+
+C_DEPS += \
+./src/constants.d 
+
+CPP_DEPS += \
+./src/Chromosome.d \
+./src/ExpressionInfo.d \
+./src/FileReader.d \
+./src/HMMSNP.d \
+./src/Individual.d \
+./src/Metrics.d \
+./src/SNP.d \
+./src/allelicImbalance.d \
+
+
+
+# Each subdirectory must supply rules for building sources it contributes
+src/%.o: ../src/%.cpp
+	@echo 'Building file: $<'
+	@echo 'Invoking: GCC C++ Compiler'
+	g++ -O3 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
+	@echo 'Finished building: $<'
+	@echo ' '
+
+src/%.o: ../src/%.c
+	@echo 'Building file: $<'
+	@echo 'Invoking: GCC C Compiler'
+	#gcc -O3 -g3 -Wall -I/usr/local/include -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"
+	gcc -O3 -g3 -Wall  -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o"$@" "$<"	
+	@echo 'Finished building: $<'
+	@echo ' '
+
+

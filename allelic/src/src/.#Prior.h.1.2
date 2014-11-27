@@ -1,0 +1,30 @@
+#ifndef PRIOR_H_
+#define PRIOR_H_
+//useless comment
+
+class Prior
+{
+public:
+	Prior();
+	virtual ~Prior();
+	float * matchQuotients;
+	float ** matchComponents;
+	int mnum;
+	int tnum;
+	int inum;
+	float *transitionQuotients;
+	float *insertionQuotients;
+	float ** transitionComponents;
+	float ** insertionComponents;
+	double Gammln(double x);
+	float Logp_cvec(float *cvec, int n, float *alpha);
+	void LogNorm(float *vec, int n);
+	void P7PriorifyEmissionVector(float *vec, float *ret_mix);
+	void P7PriorifyInsertionVector(float *vec, float *ret_mix);
+	void P7PriorifyTransitionVector(float *t, float tq[9]);
+	float FSum(float *vec, int n);
+	void FNorm(float *vec, int n);
+	
+};
+
+#endif /*PRIOR_H_*/
