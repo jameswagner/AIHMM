@@ -7,10 +7,9 @@
 
 #ifndef CONSTANTS_H_
 #define CONSTANTS_H_
- extern const char* prefix ;
+extern const char* prefix ;
 
-;
-extern  int numIndividuals;
+extern int numIndividuals;
 extern int numTestIndividuals;
 extern int individualsAnalyzed;
 
@@ -18,7 +17,7 @@ extern float expressedTable[];
 extern float unexpressedTable[]; 
 extern float expressedTableFB[];
 extern float unexpressedTableFB[]; 
-
+extern int MAX_EXPRESSION_SIZE;
 extern const int LOGSUM_TBL;
 
 #endif /* CONSTANTS_H_ */

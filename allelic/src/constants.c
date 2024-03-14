@@ -10,7 +10,7 @@
 const char* prefix = "/scratch/james/";
 int numIndividuals = 70;
 int numTestIndividuals = 70;
-
+int MAX_EXPRESSION_SIZE = 90000;
 
 float unexpressedTableFB []= {
   1e-06, 1e-06, 1e-06, 1e-06, 1e-06, 1e-06, 1e-06, 1e-06, 1e-06, 1e-06, 1e-06, 1e-06, 1e-06, 1e-06, 1e-06, 1e-06, 1e-06, 1e-06, 1e-06, 1e-06,

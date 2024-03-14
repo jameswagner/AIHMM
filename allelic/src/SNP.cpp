@@ -1,49 +1,20 @@
-/*
- * SNP.cpp
- *
- *  Created on: Dec 3, 2008
- *      Author: jameswagner
- */
-
 #include "SNP.h"
-#include <stdio.h>
-#include <string.h>
-SNP::SNP() {
 
 
-}
+SNP::SNP(const std::string& new_name, const std::string& new_chromosome, int new_location,  const std::string& new_GeneName)
+  : name(new_name), chromosome(new_chromosome), location(new_location), geneName(new_GeneName) {}
 
 
-SNP::SNP(char* new_name, char* new_chromosome, int new_location) {
-  location = new_location;
-  strcpy(name, new_name);
-  
-  strcpy(chromosome,  new_chromosome);
-	
-
-
-
-}
-
-
-
-
-
-
-
-SNP::~SNP() {
-  delete name;
-  delete chromosome;
-
-}
+SNP::~SNP() {}
 
 int SNP::getLocation() {
-	return location;
+    return location;
 }
 
-char* SNP::getName() {
-	return name;
+std::string SNP::getName() {
+    return name;
 }
-char* SNP::getChromosome() {
-  return chromosome;
+
+std::string SNP::getChromosome() {
+    return chromosome;
 }

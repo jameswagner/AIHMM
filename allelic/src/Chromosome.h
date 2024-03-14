@@ -7,20 +7,22 @@
 
 #ifndef CHROMOSOME_H_
 #define CHROMOSOME_H_
+
 #include <vector>
 #include "ExpressionInfo.h"
-using namespace std;
+
 class Chromosome {
 public:
-	Chromosome();
-	vector <ExpressionInfo*> getFullExpressions(bool useLow) ;
-	virtual ~Chromosome();
-	void addExpression(ExpressionInfo *ei);
-	void setExpression(vector <ExpressionInfo*> ei);
-	
+    Chromosome();
+    ~Chromosome();
+
+    std::vector<ExpressionInfo*> getFullExpressions(bool useLow);
+    void addExpression(ExpressionInfo* ei);
+    void setExpression(const std::vector<ExpressionInfo*>& ei);
+
 private:
-	vector <ExpressionInfo*> expressions;
-	vector <ExpressionInfo*> heterozygotes;
+    std::vector<ExpressionInfo*> expressions;
+    std::vector<ExpressionInfo*> heterozygotes;
 };
 
 #endif /* CHROMOSOME_H_ */

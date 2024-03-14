@@ -1,56 +1,38 @@
-/*
- * Individual.cpp
- *
- *  Created on: Dec 3, 2008
- *      Author: jameswagner
- */
-
 #include "Individual.h"
 
-#include <iostream>
-#include <stdlib.h>
-#include <math.h>
-#include <map>
-#include <vector>
+Individual::Individual() : name("") {}
 
+Individual::Individual(const std::string& newname) : name(newname) {}
 
-#include <string.h>
-
-#include <stdio.h>
-
-using namespace std;
-Individual::Individual() {
-
-  name = new char[40];
+std::string Individual::getName() {
+    return name;
 }
 
-Individual::Individual(char* newname) {
-  name = new char[40];
-  strcpy(name, newname);
+void Individual::setName(const std::string& newname) {
+    name = newname;
 }
-char* Individual::getName() {
-  return name;
-}
-void Individual::setName(const char* newname) {
-  strcpy(name, newname);
-}
+
 Individual::~Individual() {
-
-  chromosomes.clear(); 
-}
-void Individual::setExpression(int chromosomeIndex, vector <ExpressionInfo*> expressionInfo) {
-
-  chromosomes[chromosomeIndex]->setExpression(expressionInfo);
-
+    for (auto chromosome : chromosomes) {
+        delete chromosome;
+    }
+    chromosomes.clear();
 }
 
-vector <Chromosome*> Individual::getChromosomes() {
+#include <iostream>
 
-  
-	return chromosomes;
+void Individual::setExpression(unsigned int chromosomeIndex, const std::vector<ExpressionInfo*>& expressionInfo) {
+    if (chromosomeIndex >= 0 && chromosomeIndex < chromosomes.size()) {
+        chromosomes[chromosomeIndex]->setExpression(expressionInfo);
+    } else {
+        std::cerr << "Invalid chromosome index." << std::endl;
+    }
 }
 
-void Individual::addChromosome(Chromosome *chromosome) {
-  chromosomes.push_back( chromosome);
+std::vector<Chromosome*>& Individual::getChromosomes() {
+    return chromosomes;
 }
 
+void Individual::addChromosome(Chromosome* chromosome) {
+    chromosomes.push_back(chromosome);
+}

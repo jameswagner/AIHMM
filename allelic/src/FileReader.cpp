@@ -1,124 +1,83 @@
-/*
- * FileReader.cpp
- *
- *  Created on: Dec 3, 2008
- *      Author: jameswagner
- */
-
 #include "FileReader.h"
-#include "SNP.h"
-#include <string.h>
-#include <fstream>
-#include <iostream>
-#include "ExpressionInfo.h"
-#include "constants.h"
-#include <math.h>
-#include <stdlib.h>
-#include <stdio.h>
-using namespace std;
-FileReader::FileReader() {
-	
-
-}
-
-FileReader::~FileReader() {
-  
-}
+#include <cstring>
 
 
 
+FileReader::FileReader() {}
 
-void  FileReader::readFiles(Individual **individuals,  int startChromosome, int endChromosome,  char* fileNamePrefix) {
+FileReader::~FileReader() {}
 
   
-  for(int individualIter = 0; individualIter < numIndividuals; individualIter++) {
-    individuals[individualIter] = new Individual();
-  }
-    
-  char line[100000]; 
-   for(int indIter = 0; indIter < numIndividuals; indIter++) {
-    for(int chromosomeIndex = 1; chromosomeIndex <= 23; chromosomeIndex++) {
-      Chromosome *chromosome = new Chromosome;
-      individuals[indIter]->addChromosome(chromosome);
+void FileReader::readFiles(std::vector<Individual*>& individuals, int startChromosome, int endChromosome, const std::string& fileNamePrefix) {
+    std::cout << fileNamePrefix << std::endl;
+    for (unsigned int individualIter = 0; individualIter < individuals.size(); individualIter++) {
+        individuals[individualIter] = new Individual();
     }
-   }
+
+    char line[100000];
+    for (unsigned int individualIter = 0; individualIter < individuals.size(); individualIter++) {
+        for (int chromosomeIndex = startChromosome; chromosomeIndex <= endChromosome; chromosomeIndex++) {
+            Chromosome* chromosome = new Chromosome;
+            individuals[individualIter]->addChromosome(chromosome);
+        }
+    }
    
   
-   for(int chromosomeIter = startChromosome ; chromosomeIter <= endChromosome; chromosomeIter++) {
-     
-     char fileName[500];
-     sprintf(fileName, "%s%d.txt", fileNamePrefix, chromosomeIter);
-     ifstream infile;
-    cout << endl;
-    infile.open(fileName, ifstream::in);
-    
-    infile.getline(line, 1000);
-    
-    //sample id stuff;
-    char* name = new char[40];
-    strtok(line, " \t");
-    
-    for(int i = 0; i < numIndividuals; i++) {
-      strcpy(name, strtok(NULL, " \t"));
-      individuals[i]->setName(name);
-    }
+    for (int chromosomeIter = startChromosome; chromosomeIter <= endChromosome; chromosomeIter++) {
+        std::string fileName = fileNamePrefix + std::to_string(chromosomeIter) + ".txt";
+        std::ifstream infile(fileName);
+        if (!infile.is_open()) {
+            std::cerr << "Error opening file: " << fileName << std::endl;
+            continue;
+        }
 
-    while(infile.good()) {
-
-      infile.getline(line, 100000);
-      
-      if(strlen(line) < 10) {
-	continue;
-	
-     }
-      
-      char* token;
-      
-      char *name = new char[25];
-      char *chromosome = new char[3];
-      char *location = new char[25];
-      
-      strcpy(name, strtok(line, " \t"));
-      strcpy(chromosome, strtok(NULL, " \t"));
-      strcpy(location, strtok(NULL, " \t"));
-      
-      SNP *snp = new SNP(name, chromosome, atoi(location));
-
-      char* tokens[numIndividuals*3];
-      int index = 0;
-      token = strtok(NULL, " \t");
-      while(token != NULL && index < numIndividuals*3) {
-	
-       tokens[index++] = token;
-       
-       token = strtok(NULL, " \t");
-                                                                              
-     }
-     
-     for(int individualIndex = 0; individualIndex < numIndividuals; individualIndex++) {
- 
-       bool isHet = atoi(tokens[individualIndex*3]);
-       float expressionLogRatio = atof(tokens[individualIndex*3+1]) ;;
-       float ratioOfRatios = atof(tokens[individualIndex*3+2]);
-       
-       ExpressionInfo *expressionInfo  = new ExpressionInfo(snp, isHet, ratioOfRatios, expressionLogRatio);
-       
-       individuals[individualIndex]->getChromosomes()[atoi(chromosome)]->addExpression(expressionInfo);
-       
-     }
-     delete []name;
-     delete [] chromosome;
-     delete [] location;
-    }
-  
-
+        infile.getline(line, sizeof(line));
     
+        // Sample id stuff
+        std::vector<std::string> sampleNames;
+        std::string sampleNamesLine(line);
+        std::istringstream ssSampleNames(sampleNamesLine);
+        std::string sampleName;
+        while (std::getline(ssSampleNames, sampleName, '\t')) {
+            sampleNames.push_back(sampleName);
+        }
+
+        for (size_t i = 0; i < sampleNames.size() && i < individuals.size(); ++i) {
+            individuals[i]->setName(sampleNames[i]);
+        }
+
+        while (infile.getline(line, sizeof(line))) {
+            if (strlen(line) < 10) {
+                continue;
+            }
+      
+            std::istringstream ss(line);
+            std::string name, chromosome, location;
+            std::getline(ss, name, '\t');
+            std::getline(ss, chromosome, '\t');
+            std::getline(ss, location, '\t');
+
+          
+            SNP* snp = new SNP(name, chromosome, std::stoi(location));
+            std::vector<std::string> tokens;
+            std::string token;
+            while (std::getline(ss, token, '\t')) {
+                tokens.push_back(token);
+            }
+        
+            for (size_t i = 0; i < tokens.size(); i += 3) {
+                bool isHet = std::stoi(tokens[i]);
+                float expressionLogRatio = std::stof(tokens[i + 1]);
+                float ratioOfRatios = std::stof(tokens[i + 2]);
+
+                ExpressionInfo* expressionInfo = new ExpressionInfo(snp, isHet, ratioOfRatios, expressionLogRatio);
+                individuals[i / 3]->getChromosomes()[std::stoi(chromosome)]->addExpression(expressionInfo);
+            }
+        }
    }
 
-
-
-    for(int chromosomeIter = 1; chromosomeIter <=22; chromosomeIter++)  
-      cout << "This is the size " << chromosomeIter << " " << individuals[0]->getChromosomes()[chromosomeIter]->getFullExpressions(1).size() << endl;
+    for(int chromosomeIter = 1; chromosomeIter <=endChromosome; chromosomeIter++)  
+      std::cout << "This is the size of chromosome" << chromosomeIter << " " << individuals[0]->getChromosomes()[chromosomeIter]->getFullExpressions(1).size() << std::endl;
     
 }
 

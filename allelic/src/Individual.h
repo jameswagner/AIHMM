@@ -1,34 +1,27 @@
-/*
- * Individual.h
- *
- *  Created on: Dec 3, 2008
- *      Author: jameswagner
- */
-
 #ifndef INDIVIDUAL_H_
 #define INDIVIDUAL_H_
-#include "Chromosome.h"
 
+#include "Chromosome.h"
 #include <vector>
+#include <string>
+#include <iostream>
+
 class Individual {
 public:
-	Individual();
-	Individual(char* name);
-	virtual ~Individual();
-	vector <Chromosome*> getChromosomes();
-	void setExpression(int chromosomeIndex, vector <ExpressionInfo*> ei);
-	void addChromosome(Chromosome *chromosome);
+    Individual();
+    Individual(const std::string& name);
+    ~Individual();
 
-	void setName(const char* newName);
-	char* getName();
+    std::vector<Chromosome*>& getChromosomes();
+    void setExpression(unsigned int chromosomeIndex, const std::vector<ExpressionInfo*>& ei);
+    void addChromosome(Chromosome* chromosome);
 
+    void setName(const std::string& newName);
+    std::string getName();
 
 private:
-
-	char* name;
-
-	vector <Chromosome*> chromosomes;
-
+    std::string name;
+    std::vector<Chromosome*> chromosomes;
 };
 
 #endif /* INDIVIDUAL_H_ */
