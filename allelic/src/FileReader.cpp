@@ -9,7 +9,7 @@ FileReader::~FileReader() {}
 
   
 void FileReader::readFiles(std::vector<Individual*>& individuals, int startChromosome, int endChromosome, const std::string& fileNamePrefix) {
-    std::cout << fileNamePrefix << std::endl;
+    
     for (unsigned int individualIter = 0; individualIter < individuals.size(); individualIter++) {
         individuals[individualIter] = new Individual();
     }
@@ -26,18 +26,20 @@ void FileReader::readFiles(std::vector<Individual*>& individuals, int startChrom
     for (int chromosomeIter = startChromosome; chromosomeIter <= endChromosome; chromosomeIter++) {
         std::string fileName = fileNamePrefix + std::to_string(chromosomeIter) + ".txt";
         std::ifstream infile(fileName);
+        
         if (!infile.is_open()) {
             std::cerr << "Error opening file: " << fileName << std::endl;
             continue;
         }
 
         infile.getline(line, sizeof(line));
-    
+        
         // Sample id stuff
         std::vector<std::string> sampleNames;
         std::string sampleNamesLine(line);
         std::istringstream ssSampleNames(sampleNamesLine);
         std::string sampleName;
+
         while (std::getline(ssSampleNames, sampleName, '\t')) {
             sampleNames.push_back(sampleName);
         }
@@ -56,7 +58,6 @@ void FileReader::readFiles(std::vector<Individual*>& individuals, int startChrom
             std::getline(ss, name, '\t');
             std::getline(ss, chromosome, '\t');
             std::getline(ss, location, '\t');
-
           
             SNP* snp = new SNP(name, chromosome, std::stoi(location));
             std::vector<std::string> tokens;
@@ -65,13 +66,12 @@ void FileReader::readFiles(std::vector<Individual*>& individuals, int startChrom
                 tokens.push_back(token);
             }
         
-            for (size_t i = 0; i < tokens.size(); i += 3) {
+            for (unsigned int i = 0; i < tokens.size(); i += 3) {
                 bool isHet = std::stoi(tokens[i]);
                 float expressionLogRatio = std::stof(tokens[i + 1]);
                 float ratioOfRatios = std::stof(tokens[i + 2]);
-
                 ExpressionInfo* expressionInfo = new ExpressionInfo(snp, isHet, ratioOfRatios, expressionLogRatio);
-                individuals[i / 3]->getChromosomes()[std::stoi(chromosome)]->addExpression(expressionInfo);
+                individuals[i / 3]->getChromosomes()[std::stoi(chromosome)-1]->addExpression(expressionInfo);
             }
         }
    }
