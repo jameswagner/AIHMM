@@ -1,8 +1,19 @@
+# Build directories
+/build/
+/bin/
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+
 # Compiled Object files
-*.slo
-*.lo
 *.o
 *.obj
+*.lo
+*.slo
 
 # Precompiled Headers
 *.gch
@@ -13,22 +24,32 @@
 *.dylib
 *.dll
 
-# Fortran module files
-*.mod
-
 # Compiled Static libraries
-*.lai
-*.la
 *.a
+*.la
+*.lai
 *.lib
 
 # Executables
 *.exe
 *.out
 *.app
+AIHMM
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Fortran module files
+*.mod
 
 # Program specific output files
-*.evals
-*.viterbi
-
-*~
+output/*.evals
+output/*.viterbi
+output/*.txt
