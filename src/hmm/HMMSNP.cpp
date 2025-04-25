@@ -22,7 +22,7 @@ HMMSNP::~HMMSNP() {
 HMMSNP::HMMSNP(const std::string& fileName) {
 
     useLow = true;
-    runifValue = 0.01;
+    runifValue = 0.001;
 
     std::ifstream infile(fileName);
     if (!infile.is_open()) {
@@ -60,15 +60,6 @@ HMMSNP::HMMSNP(const std::string& fileName) {
 double HMMSNP::computeProbability(double mean, double variance, double value) {
     double std = sqrt(variance);
     return (1 / (std * sqrt(2. * PI)) * exp(-1 * (value - mean) * (value - mean) / (2 * variance)));
-}
-
- 
-
-void HMMSNP::initializeArrays(int numStates, std::vector<std::vector<double>>& alphas, std::vector<std::vector<double>>& betas, std::vector<std::vector<double>>& emissionProbabilities) {
-    // Resize vectors
-    alphas.resize(MAX_EXPRESSION_SIZE, std::vector<double>(numStates));
-    betas.resize(MAX_EXPRESSION_SIZE, std::vector<double>(numStates));
-    emissionProbabilities.resize(MAX_EXPRESSION_SIZE, std::vector<double>(numStates));
 }
 
 void HMMSNP::computeEmissionProbabilities(std::vector<ExpressionInfo*>& expressionSuperVector, int numStates, float* expressedTableLocal, float* unexpressedTableLocal, std::vector<double>& ratioMeans, std::vector<double>& ratioVariances, double runifValue, std::vector<std::vector<double>>& emissionProbabilities) {
@@ -204,6 +195,11 @@ const std::vector<std::vector<double>>& betas, std::vector<std::vector<double>>&
 double& iarray0Sum, const std::vector<std::vector<double>>& transitionProbabilities, const std::vector<std::vector<double>>& emissionProbabilities, 
 std::vector<std::vector<double>>& transitionSums
 ) {
+    // Initialize sumWeightHets to zero for each state
+    for (int stateIndex = 0; stateIndex < numStates; stateIndex++) {
+        sumWeightHets[stateIndex] = 0.0;
+    }
+
     for (unsigned int expressionIndex = 0; expressionIndex < expressionSuperVector.size(); expressionIndex++) {
         double sumIndex = 0.0;
         for (int stateIndex = 0; stateIndex < numStates; stateIndex++) {
@@ -213,10 +209,22 @@ std::vector<std::vector<double>>& transitionSums
         for (int stateIndex = 0; stateIndex < numStates; stateIndex++) {
             iarray[expressionIndex][stateIndex] /= sumIndex;
         }
+        
         for (int stateIndex = 0; stateIndex < numStates; stateIndex++) {
-            if (expressionSuperVector[expressionIndex]->isHeterozygote() && iarray[expressionIndex][stateIndex] > 0.05) {
+            // Special case for last state - use a much lower threshold
+            double threshold = (stateIndex == numStates - 1) ? 0.0 : 0.05;
+            
+            if (expressionSuperVector[expressionIndex]->isHeterozygote() && iarray[expressionIndex][stateIndex] > threshold) {
                 sumWeightHets[stateIndex] += iarray[expressionIndex][stateIndex];
             }
+        }
+    }
+    
+    // Ensure no state has zero weight by adding a small pseudocount
+    for (int stateIndex = 0; stateIndex < numStates; stateIndex++) {
+        if (sumWeightHets[stateIndex] < 1e-10) {
+            std::cout << "WARNING: Adding small pseudocount for state " << stateIndex << " (original value: " << sumWeightHets[stateIndex] << ")" << std::endl;
+            sumWeightHets[stateIndex] = 1e-5;  // Small pseudocount to prevent division by zero
         }
     }
     
@@ -269,12 +277,25 @@ std::vector<std::vector<double>>& sumTransitionProbabilities) {
         sumOfMeans[stateIndex] = 0.0;
         sumOfVariances[stateIndex] = 0.001;
 
+        // Count how many positions contribute to this state
+        int contributingPositions = 0;
         for (unsigned int expressionIndex = 0; expressionIndex < expressionSuperVector.size(); expressionIndex++) {
             if (expressionSuperVector[expressionIndex]->isHeterozygote() && iarray[expressionIndex][stateIndex] > 0.05) {
-                sumOfMeans[stateIndex] += expressionSuperVector[expressionIndex]->getRatioOfRatios() * iarray[expressionIndex][stateIndex] / sumWeightHets[stateIndex];
+                contributingPositions++;
             }
             else if (expressionSuperVector[expressionIndex]->isHeterozygote() && stateIndex == numStates - 1 && iarray[expressionIndex][stateIndex] > 0.0) {
-                sumOfMeans[stateIndex] += expressionSuperVector[expressionIndex]->getRatioOfRatios() * iarray[expressionIndex][stateIndex] / sumWeightHets[stateIndex];
+                contributingPositions++;
+            }
+        }
+
+        for (unsigned int expressionIndex = 0; expressionIndex < expressionSuperVector.size(); expressionIndex++) {
+            if (expressionSuperVector[expressionIndex]->isHeterozygote() && iarray[expressionIndex][stateIndex] > 0.05) {
+                double contribution = expressionSuperVector[expressionIndex]->getRatioOfRatios() * iarray[expressionIndex][stateIndex] / sumWeightHets[stateIndex];
+                sumOfMeans[stateIndex] += contribution;
+            }
+            else if (expressionSuperVector[expressionIndex]->isHeterozygote() && stateIndex == numStates - 1 && iarray[expressionIndex][stateIndex] > 0.0) {
+                double contribution = expressionSuperVector[expressionIndex]->getRatioOfRatios() * iarray[expressionIndex][stateIndex] / sumWeightHets[stateIndex];
+                sumOfMeans[stateIndex] += contribution;
             }
         }
     }
@@ -305,10 +326,43 @@ const std::vector<double>& sumRatioVariances, const std::vector<std::vector<doub
     
     for(int stateIndex = 0; stateIndex < numStates; stateIndex++) {
         startProbs[stateIndex] = sumStartProbs[stateIndex] / totalSNPS;
-        if(fabs(ratioMeans[stateIndex] - sumRatioMeans[stateIndex] / sumWeightHetsAllChrom[stateIndex]) > maxChange || fabs(ratioVariances[stateIndex] - sumRatioVariances[stateIndex] / sumWeightHetsAllChrom[stateIndex]) > maxChange)
+        
+        // Check if we have enough data for this state (at least 0.1 cumulative weight)
+        if (sumWeightHetsAllChrom[stateIndex] < 0.1) {
+            std::cout << "WARNING: Insufficient data for state " << stateIndex << " (weight: " << sumWeightHetsAllChrom[stateIndex] 
+                      << "). Keeping current values (mean=" << ratioMeans[stateIndex] << ", variance=" << ratioVariances[stateIndex] << ")" << std::endl;
+            continue;  // Skip updating this state's parameters
+        }
+        
+        // Calculate new values
+        double newRatioMean = sumRatioMeans[stateIndex] / sumWeightHetsAllChrom[stateIndex];
+        double newRatioVariance = sumRatioVariances[stateIndex] / sumWeightHetsAllChrom[stateIndex];
+        
+        // Check for valid values
+        if (std::isnan(newRatioMean) || std::isnan(newRatioVariance) || 
+            std::isinf(newRatioMean) || std::isinf(newRatioVariance)) {
+            std::cout << "WARNING: Invalid values calculated for state " << stateIndex 
+                      << ". Keeping current values." << std::endl;
+            continue;  // Skip updating this state's parameters
+        }
+        
+        // Check for outrageous values (sanity check)
+        if (fabs(newRatioMean) > 10.0 || newRatioVariance > 10.0) {
+            std::cout << "WARNING: Extreme values calculated for state " << stateIndex 
+                      << " (mean=" << newRatioMean << ", variance=" << newRatioVariance 
+                      << "). Keeping current values." << std::endl;
+            continue;  // Skip updating this state's parameters
+        }
+        
+        // Check if values have changed significantly
+        if(fabs(ratioMeans[stateIndex] - newRatioMean) > maxChange || 
+           fabs(ratioVariances[stateIndex] - newRatioVariance) > maxChange)
             changed = true;
-        ratioMeans[stateIndex] = sumRatioMeans[stateIndex] / sumWeightHetsAllChrom[stateIndex];
-        ratioVariances[stateIndex] = sumRatioVariances[stateIndex] / sumWeightHetsAllChrom[stateIndex];
+        
+        // Update parameters
+        ratioMeans[stateIndex] = newRatioMean;
+        // Ensure variance is at least 0.01 for stability
+        ratioVariances[stateIndex] = std::max(0.01, newRatioVariance);
         
         for(int innerStateIndex = 0; innerStateIndex < numStates; innerStateIndex++) {
             if(fabs(transitionProbabilities[stateIndex][innerStateIndex] - sumTransitionProbabilities[stateIndex][innerStateIndex] / totalSNPS) > maxChange)
@@ -328,11 +382,12 @@ void HMMSNP::baumWelch(std::vector<std::unique_ptr<Individual>>& individuals, co
     double maxChange = 1e-05;  
     std::vector <ExpressionInfo*>  expressionSuperVector;
  
-    std::vector<std::vector<double>> iarray(MAX_EXPRESSION_SIZE, std::vector<double>(numStates));
-    std::vector<std::vector<double>> alphas(MAX_EXPRESSION_SIZE, std::vector<double>(numStates));
-    std::vector<std::vector<double>> betas(MAX_EXPRESSION_SIZE, std::vector<double>(numStates));
-    std::vector<std::vector<double>> emissionProbabilities(MAX_EXPRESSION_SIZE, std::vector<double>(numStates));
-    std::vector<double> scales(MAX_EXPRESSION_SIZE);
+    // Initialize these vectors without size - they'll be resized for each chromosome
+    std::vector<std::vector<double>> iarray;
+    std::vector<std::vector<double>> alphas;
+    std::vector<std::vector<double>> betas;
+    std::vector<std::vector<double>> emissionProbabilities;
+    std::vector<double> scales;
     int numIndividuals = individuals.size();
 
     for(int outer = 0; outer < 100; outer++) {
@@ -358,20 +413,21 @@ void HMMSNP::baumWelch(std::vector<std::unique_ptr<Individual>>& individuals, co
         for(int individualIndex = 0 ; individualIndex < numIndividuals; individualIndex++) {
             expressedTableLocal = expressedTable;
             unexpressedTableLocal = unexpressedTable;
-            std::cout << "individualIndex: " << individualIndex << std::endl;
-            std::cout << "outer: " << outer << std::endl;
-            std::cout << "numIndividuals: " << numIndividuals << std::endl;
+            std::cout << "Processing individual: " << individualIndex << ", iteration: " << outer << " (total individuals: " << numIndividuals << ")" << std::endl;
+            
             auto& chromosomes = individuals[individualIndex]->getChromosomes();
             for(unsigned int chromosomeIter = 0; chromosomeIter < chromosomes.size(); chromosomeIter++) {
                 std::vector <ExpressionInfo*> expressionInfos = chromosomes[chromosomeIter]->getFullExpressions(1);
                 expressionSuperVector.clear();
                 expressionSuperVector.insert(expressionSuperVector.end(), expressionInfos.begin(), expressionInfos.end());
+                std::cout << "Processing chromosome " << chromosomeIter << " with " << expressionSuperVector.size() << " SNPs" << std::endl;
+                
+                iarray.resize(expressionSuperVector.size(), std::vector<double>(numStates, 0.0));
+                alphas.resize(expressionSuperVector.size(), std::vector<double>(numStates));
+                betas.resize(expressionSuperVector.size(), std::vector<double>(numStates));
+                emissionProbabilities.resize(expressionSuperVector.size(), std::vector<double>(numStates));
+                scales.resize(expressionSuperVector.size());
 
-                for(unsigned int expressionIndex = 0; expressionIndex < expressionSuperVector.size(); expressionIndex++) {
-                    for(int stateIndex  = 0; stateIndex < numStates; stateIndex++) {
-                        iarray[expressionIndex][stateIndex] = 0.;
-                    }
-                }
                 int sumWeightAllSNPs = expressionInfos.size();
 
                 totalSNPS += sumWeightAllSNPs;
@@ -391,24 +447,44 @@ void HMMSNP::baumWelch(std::vector<std::unique_ptr<Individual>>& individuals, co
                 std::vector<std::vector<double>> transitionSums(numStates, std::vector<double>(numStates));
                 
                 computeEmissionProbabilities(expressionSuperVector, numStates, expressedTableLocal, unexpressedTableLocal, ratioMeans, ratioVariances, runifValue, emissionProbabilities);
-                forwardPart( numStates, startProbs, transitionProbabilities, emissionProbabilities, alphas, scales);
-                std::cout << "Calling backwardPart" << std::endl;
+                
+                // Display current state parameters
+                std::cout << "Current HMM state parameters:" << std::endl;
+                for(int i = 0; i < numStates; i++) {
+                    std::cout << "State " << i << ": mean=" << ratioMeans[i] << ", variance=" << ratioVariances[i] << std::endl;
+                }
+
+                std::cout << "Running forward algorithm..." << std::endl;
+                forwardPart(numStates, startProbs, transitionProbabilities, emissionProbabilities, alphas, scales);
+                
+                std::cout << "Running backward algorithm..." << std::endl;
                 backwardPart(expressionSuperVector, numStates, transitionProbabilities, emissionProbabilities, betas, scales);
-                std::cout << "Calling eStep" << std::endl;
+                
+                std::cout << "Running E-step..." << std::endl;
                 eStep(expressionSuperVector, numStates, alphas, betas, iarray, sumWeightHets, iarray0Sum, transitionProbabilities, emissionProbabilities, transitionSums);
-                std::cout << "Calling mStep" << std::endl;
+                
+                std::cout << "Running M-step..." << std::endl;
                 mStep(expressionSuperVector, numStates, iarray, sumWeightHets, sumStartProbs, sumRatioMeans, sumRatioVariances, iarray0Sum, sumWeightAllSNPs, transitionSums, sumTransitionProbabilities);
+                
                 for (int index = 0; index < numStates; index++) {
                     sumWeightHetsAllChrom[index] += sumWeightHets[index];
                 }
             }	
         }
 
+        std::cout << "Updating parameters..." << std::endl;
         changed = updateParameters(startProbs, ratioMeans, ratioVariances, transitionProbabilities, sumStartProbs, sumRatioMeans, sumRatioVariances, sumTransitionProbabilities, sumWeightHetsAllChrom, numStates, totalSNPS, maxChange);
+        
         if(!changed) {
-            printf("NO MORE CHANGE iteration %d\n", outer);
+            std::cout << "Convergence achieved at iteration " << outer << std::endl;
             break;
-        }		
+        }
+        
+        // Display updated parameters after each iteration
+        std::cout << "Updated HMM state parameters:" << std::endl;
+        for(int i = 0; i < numStates; i++) {
+            std::cout << "State " << i << ": mean=" << ratioMeans[i] << ", variance=" << ratioVariances[i] << std::endl;
+        }
     }
  
 
@@ -429,7 +505,7 @@ void HMMSNP::baumWelch(std::vector<std::unique_ptr<Individual>>& individuals, co
         std::cout << "File written successfully." << std::endl;
     } 
     else {
-        std::cerr << "Unable to open file: " << outputFile << std::endl;
+        std::cerr << "ERROR: Unable to open file: " << outputFile << std::endl;
     }
 
     oneStepTransitions.resize(numStates, std::vector<double>(numStates, 0.0));
@@ -452,7 +528,6 @@ void HMMSNP::baumWelch(std::vector<std::unique_ptr<Individual>>& individuals, co
         oneStepTransitions[expressedStates][firstIndex] = sum/2;
         oneStepTransitions[expressedStates][mirrorFirst] = sum/2;
 	}
-
 }
 
 
@@ -732,12 +807,12 @@ void HMMSNP::leftToRight(std::vector<std::unique_ptr<Individual>>& individuals, 
     int maxOuter = 100;
     int numIndividuals = individuals.size();
 
-    std::vector<std::vector<std::vector<int>>> minMaxIndices(tempChromosomes.size(), std::vector<std::vector<int>>(MAX_EXPRESSION_SIZE, std::vector<int>(2)));
+    std::vector<std::vector<std::vector<int>>> minMaxIndices(tempChromosomes.size());
     std::vector<std::vector<std::vector<std::vector<double>>>> tempTransitionValues(tempChromosomes.size(), std::vector<std::vector<std::vector<double>>>(numStates, std::vector<std::vector<double>>(numStates, std::vector<double>(numStates))));
     std::cout << "ltor loop:" << std::endl;
     initializeTransitionValues(individuals, tempTransitionValues);
     std::cout <<"Initialized transition values\n" << std::endl;
-    std::vector<std::vector<float>> iarray(MAX_EXPRESSION_SIZE, std::vector<float>(numStates));
+    std::vector<std::vector<float>> iarray;
 
     for (int outer = 0; outer < maxOuter; outer++) {
         std::cout << "ltor loop:" << outer << std::endl;

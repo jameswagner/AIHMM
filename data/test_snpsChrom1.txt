@@ -1,0 +1,21 @@
+#SAMPLE TestIndividual1 TestIndividual2
+rs_state1_balanced_1	1	1000	1	2.0	0.10	1	2.0	0.04
+rs_state1_balanced_2	1	2000	1	2.0	0.09	1	2.0	0.02
+rs_state1_balanced_3	1	3000	1	2.0	-0.1	1	2.0	0.01
+rs_state1_balanced_4	1	4000	1	2.0	0.04	1	2.0	0.05
+rs_state1_balanced_5	1	5000	1	2.0	0.01	1	2.0	-0.1
+rs_state2_neg_imbalance_1	1	10000	1	2.0	-2	1	2.0	-1.95
+rs_state2_neg_imbalance_2	1	11000	1	2.0	-2.02	1	2.0	-1.95
+rs_state2_neg_imbalance_3	1	12000	1	2.0	-1.9	1	2.0	-1.88
+rs_state2_neg_imbalance_4	1	13000	1	2.0	-1.89	1	2.0	-1.92
+rs_state2_neg_imbalance_5	1	14000	1	2.0	-1.99	1	2.0	-1.92
+rs_state3_pos_imbalance_1	1	20000	1	2.0	1.95	1	2.0	1.96
+rs_state3_pos_imbalance_2	1	21000	1	2.0	1.97	1	2.0	1.955
+rs_state3_pos_imbalance_3	1	22000	1	2.0	1.96	1	2.0	1.945
+rs_state3_pos_imbalance_4	1	23000	1	2.0	1.85	1	2.0	1.98
+rs_state3_pos_imbalance_5	1	24000	1	2.0	1.65	1	2.0	1.97
+rs_state4_nonexpressed_1	1	30000	1	-15.0	0.009	1	-15.0	0.099
+rs_state4_nonexpressed_2	1	31000	1	-15.0	0.090	1	-15.0	0.099
+rs_state4_nonexpressed_3	1	32000	1	-15.0	0.099	1	-15.8	0.099
+rs_state4_nonexpressed_4	1	33000	1	-15.9	0.098	1	-15.0	0.096
+rs_state4_nonexpressed_5	1	34000	1	-15.0	0.098	1	-14.9	0.095
